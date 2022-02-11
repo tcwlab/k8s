@@ -1,13 +1,71 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
-- test
-sast:
+  - lint
+  - build
+  - test
+  - release
+
+mega-linter:
+  stage: lint
+  image: megalinter/megalinter:v5
+  tags:
+    - docker
+    - linux
+  script: ["true"]
+  variables:
+    # All available variables are described in documentation
+    # https://megalinter.github.io/configuration/
+    DEFAULT_WORKSPACE: $CI_PROJECT_DIR
+  artifacts:
+    when: always
+    paths:
+      - report
+    expire_in: 1 week
+  except:
+    - main
+    - tags
+
+docker-build:
+  stage: build
+  image: docker:latest
+  tags:
+    - docker
+    - linux
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - echo "Running on branch $CI_COMMIT_BRANCH with tag = $CI_COMMIT_SHORT_SHA"
+    - docker build --no-cache -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - echo "Pushing image '$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA' to gitlab registry"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+  except:
+    - main
+    - tags
+
+docker-scan:
   stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
+  image: docker:latest
+  tags:
+    - docker
+    - linux
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PUSH_TOKEN"
+  script:
+    - docker scan "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+  except:
+    - main
+    - tags
+
+semantic-release:
+  stage: release
+  image: tcwlab/semantic-release:latest
+  tags:
+    - docker
+    - linux
+  script:
+    - semantic-release
+  only:
+    refs:
+      - main
+  except:
+    - tags
