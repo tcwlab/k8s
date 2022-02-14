@@ -37,6 +37,7 @@
     "mkdir",
     "pipefail",
     "saas",
+    "susr",
     "tcwlab",
     "venv"
   ]
