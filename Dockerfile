@@ -1,7 +1,7 @@
 #####
 # STEP 1: build base image
 #####
-FROM alpine:3.16@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1acc53015037c AS base
+FROM alpine:3.16@sha256:3dc10f9dcd24583d4cec1695bf0ea8be483c35a354d4183256981ed7041078da AS base
 RUN apk add -U --no-cache bash coreutils git && \
     apk upgrade && \
     rm -rf /var/cache/apk/*
