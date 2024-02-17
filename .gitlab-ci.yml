@@ -42,7 +42,7 @@ docker-build:
 
 semantic-release:
   stage: release
-  image: tcwlab/semantic-release:latest@sha256:7b2be1fb36d026a32d05841c991c23be4aa94169389649eda2c5eebf4c562451
+  image: tcwlab/semantic-release:latest@sha256:2bce8706617a3c2239f628aa3a10f14b1297650a1ecb7bd8647341614646803c
   tags:
     - docker
     - linux
